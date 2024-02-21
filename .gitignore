@@ -1,3 +1,12 @@
+# Project-specific files
+*.pdf
+*.h5
+*.png
+*.log
+*.ini
+*.dat
+raynest/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
