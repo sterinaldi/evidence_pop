@@ -8,6 +8,13 @@
 raynest/
 .DS_store
 
+# Inference product
+draws_evidence.json
+evidence.txt
+prob_log_evidence.txt
+realisations_Zi.json
+samples_Z.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
