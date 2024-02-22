@@ -19,8 +19,8 @@ def load_data(samples_file, logP_file, n_samples = -1):
 
     samples, name = load_single_event(samples_file, n_samples = -1)
     logP          = np.genfromtxt(logP_file)
-    samples       = samples[np.argsort(logP)]
-    logP          = np.sort(logP)
+    samples       = samples[np.argsort(logP)][::-1]
+    logP          = np.sort(logP)[::-1]
     if n_samples == -1:
         return samples, logP, name
     else:
