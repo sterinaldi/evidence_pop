@@ -1,12 +1,10 @@
 import numpy as np
-
 import optparse
+import warnings
+import ray
 
 from pathlib import Path
 from tqdm import tqdm
-from warnings import warn
-
-import ray
 from ray.util import ActorPool
 
 from figaro.mixture import DPGMM, HDPGMM
