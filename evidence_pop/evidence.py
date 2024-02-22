@@ -189,7 +189,7 @@ def main():
         samples_Z = np.genfromtxt(Path(options.output, 'samples_Z.txt'))
     if not options.postprocess:
         sigma_Z   = np.std(np.median(samples_Z, axis = 1))/5.
-        bounds_Z  = np.atleast_2d(np.percentile(samples_Z.flatten(), [10,90]))
+        bounds_Z  = np.atleast_2d([np.min(samples_Z), np.max(samples_Z)])
         pool = ActorPool([worker_evidence.remote(bounds     = bounds_Z,
                                                  out_folder = options.output,
                                                  hier_sigma = sigma_Z,
