@@ -6,6 +6,7 @@
 *.ini
 *.dat
 raynest/
+.DS_store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
