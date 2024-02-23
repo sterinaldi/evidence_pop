@@ -7,75 +7,15 @@ from pathlib import Path
 from tqdm import tqdm
 from ray.util import ActorPool
 
-from figaro.mixture import DPGMM, HDPGMM
-from figaro.utils import save_options, load_options, get_priors, rvs_median
+from figaro.utils import save_options, load_options, rvs_median
 from figaro.plot import plot_median_cr, plot_multidim
 from figaro.load import save_density, load_density
 
-from evidence_pop.utils import load_data, significative_digits
-
-# Remote actor for probability density reconstruction
-@ray.remote
-class worker_post:
-    def __init__(self, bounds,
-                       sigma   = None,
-                       samples = None,
-                       probit  = True,
-                       scale   = None,
-                       ):
-        self.dim     = bounds.shape[-1]
-        self.mixture = DPGMM(bounds, prior_pars = get_priors(bounds, samples = samples, std = sigma, scale = scale, probit = probit, hierarchical = False), probit = probit)
-        self.samples = np.copy(samples)
-        self.samples.setflags(write = True)
-
-    def draw_sample(self):
-        return self.mixture.density_from_samples(self.samples, make_comp = False)
-
-# Remote actor for evidence inference
-@ray.remote
-class worker_evidence:
-    def __init__(self, bounds,
-                       out_folder  = '.',
-                       hier_sigma  = None,
-                       events      = None,
-                       ):
-        self.out_folder           = out_folder
-        self.dim                  = 1
-        self.bounds               = np.atleast_2d(bounds)
-        self.mixture              = DPGMM(self.bounds, probit = False)
-        self.hierarchical_mixture = HDPGMM(self.bounds,
-                                           probit     = False,
-                                           prior_pars = get_priors(self.bounds,
-                                                                   samples      = events,
-                                                                   std          = hier_sigma,
-                                                                   probit       = False,
-                                                                   hierarchical = True,
-                                                                   )
-                                            )
-
-    def run_Zi(self, pars):
-        # Unpack data
-        samples, name, n_draws = pars
-        # Copying (issues with shuffling)
-        ev = np.copy(samples)
-        ev.setflags(write = True)
-        # Actual inference
-        prior_pars = get_priors(self.bounds, samples = ev, probit = False, hierarchical = False)
-        self.mixture.initialise(prior_pars = prior_pars)
-        draws      = [self.mixture.density_from_samples(ev, make_comp = False) for _ in range(n_draws)]
-        return draws
-
-    def draw_hierarchical(self):
-        return self.hierarchical_mixture.density_from_samples(self.posteriors, make_comp = False)
-    
-    def load_posteriors(self, posteriors):
-        self.posteriors = np.copy(posteriors)
-        self.posteriors.setflags(write = True)
-        for i in range(len(self.posteriors)):
-            self.posteriors[i].setflags(write = True)
+from evidence_pop.utils import load_data, plot_evidence, save_evidence
+from evidence_pop.workers import worker_post, worker_evidence
 
 def main():
-    parser = optparse.OptionParser(prog = 'evidence', description = 'Bayesian evidence inference')
+    parser = optparse.OptionParser(prog = 'evidence', description = 'Inference of Bayesian evidence')
     # Input/output
     parser.add_option("-s", "--samples", type = "string", dest = "samples_file", help = "File with samples", default = None)
     parser.add_option("-l", "--logP", type = "string", dest = "logp_file", help = "File with log probability", default = None)
@@ -89,14 +29,14 @@ def main():
     # Settings
     parser.add_option("-r", "--skip_reconstruction", dest = "skip_reconstruction", action = 'store_true', help = "Skip posterior reconstruction", default = False)
     parser.add_option("-z", "--skip_samples_z", dest = "skip_samples_z", action = 'store_true', help = "Skip Zi reconstruction", default = False)
-    parser.add_option("--save_posterior", dest = "save_posterior", action = 'store_true', help = "Skip posterior reconstruction", default = False)
-    parser.add_option("--draws_p", type = "int", dest = "draws_p", help = "Number of draws for posterior reconstruction", default = 200)
+    parser.add_option("--save_posterior", dest = "save_posterior", action = 'store_true', help = "Save plot for posterior probability density", default = False)
+    parser.add_option("--draws_p", type = "int", dest = "draws_p", help = "Number of draws for posterior reconstruction", default = 1000)
     parser.add_option("--draws_zi", type = "int", dest = "draws_zi", help = "Number of draws for individual Z_i", default = 1)
     parser.add_option("--draws", type = "int", dest = "draws", help = "Number of draws for Z", default = 1000)
     parser.add_option("-n", "--n_post_samples", type = "int", dest = "n_post_samples", help = "Number of samples to use for the inference", default = 1000)
     parser.add_option("--n_samples_dsp", type = "int", dest = "n_samples_dsp", help = "Number of samples to analyse (downsampling). Default: all", default = -1)
     parser.add_option("--sigma_prior", dest = "sigma_prior", type = "string", help = "Expected standard deviation (prior) - single value or n-dim values", default = None)
-    parser.add_option("--fraction", dest = "fraction", type = "float", help = "Fraction of samples standard deviation for sigma prior. Overrided by sigma_prior.", default = None)
+    parser.add_option("--fraction", dest = "fraction", type = "float", help = "Fraction of samples standard deviation for sigma prior. Overrided by sigma_prior.", default = 5.)
     parser.add_option("--no_probit", dest = "probit", action = 'store_false', help = "Disable probit transformation for posterior reconstruction", default = True)
     parser.add_option("--config", dest = "config", type = "string", help = "Config file. Warning: command line options override config options", default = None)
     parser.add_option("--n_parallel", dest = "n_parallel", type = "int", help = "Number of parallel threads", default = 1)
@@ -182,13 +122,14 @@ def main():
     
     # Evidence inference
     if not (options.skip_samples_z or options.postprocess):
-        idx = np.random.choice(len(samples)//2, np.min([len(samples)//2, options.n_post_samples]), replace = False)
+        # Random sampling from samples within 68th percentile
+        idx = np.random.choice(int(len(samples)*0.68), np.min([int(len(samples)*0.68), options.n_post_samples]), replace = False)
         samples_Z = np.array([logP[idx] - d.logpdf(samples[idx]) for d in tqdm(draws, desc = 'Evaluating Zi')]).T
         np.savetxt(Path(options.output, 'samples_Z.txt'), samples_Z)
     else:
         samples_Z = np.genfromtxt(Path(options.output, 'samples_Z.txt'))
     if not options.postprocess:
-        sigma_Z   = np.std(np.median(samples_Z, axis = 1))/5.
+        sigma_Z   = np.std(np.median(samples_Z, axis = 1))/options.fraction
         bounds_Z  = np.atleast_2d([np.min(samples_Z), np.max(samples_Z)])
         pool = ActorPool([worker_evidence.remote(bounds     = bounds_Z,
                                                  out_folder = options.output,
@@ -222,24 +163,6 @@ def main():
     else:
         draws = load_density(Path(options.output, 'draws_evidence.json'))
     # Plot
-    plot_median_cr(draws,
-                   out_folder       = options.output,
-                   name             = 'log_evidence',
-                   label            = '\\log{Z}',
-                   hierarchical     = True,
-                   true_value       = options.logz,
-                   true_value_label = '\\log{Z}_\\mathrm{true}'
-                   )
-    Path(options.output, 'log_log_evidence.pdf').unlink()
+    plot_evidence(draws, options.output, options.logz)
     # Save evidence value
-    with open('evidence.txt', 'w') as f:
-        logZ_samples = rvs_median(draws, size = 10000)
-        logZ_med, logZ_up, logZ_down = np.percentile(logZ_samples, [50, 84, 16])
-        prec = significative_digits([logZ_up-logZ_med, logZ_med-logZ_down])
-        f.write('logZ = {:.{prec}f} + {:.{prec}f} - {:.{prec}f}\n'.format(logZ_med, logZ_up-logZ_med, logZ_med-logZ_down, prec = prec))
-        try:
-            Z_med, Z_up, Z_down = np.percentile(np.exp(logZ_samples), [50, 84, 16])
-            prec = significative_digits([Z_up-Z_med, Z_med-Z_down])
-            f.write('Z = {:.{prec}f} + {:.{prec}f} - {:.{prec}f}\n'.format(Z_med, Z_up-Z_med, Z_med-Z_down, prec = prec))
-        except:
-            pass
+    save_evidence(draws, options.output)
