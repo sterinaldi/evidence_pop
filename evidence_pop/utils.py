@@ -77,6 +77,7 @@ def plot_evidence(draws, bounds = None, out_folder = '.', logZ = None):
                  )
     # logZ
     plot_median_cr(draws,
+                   bounds           = np.log(bounds),
                    out_folder       = out_folder,
                    name             = 'log_evidence',
                    label            = '\\log{Z}',

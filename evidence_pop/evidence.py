@@ -163,6 +163,6 @@ def main():
     else:
         draws = load_density(Path(options.output, 'draws_evidence.json'))
     # Plot
-    plot_evidence(draws, options.output, options.logz)
+    plot_evidence(draws, out_folder = options.output, logZ = options.logz)
     # Save evidence value
-    save_evidence(draws, options.output)
+    save_evidence(draws, out_folder = options.output)
