@@ -64,26 +64,30 @@ def plot_evidence(draws, bounds = None, out_folder = '.', logZ = None):
     else:
         bounds = np.atleast_1d(bounds)
     # Z
-    Z       = np.linspace(bounds[0], bounds[1], 1000)
-    draws_Z = np.array([d.pdf(np.log(Z))/Z for d in draws])
-    plot_1d_dist(Z,
-                 draws_Z,
-                 out_folder       = out_folder,
-                 name             = 'evidence',
-                 label            = 'Z',
-                 median_label     = '\\mathrm{(H)DPGMM}',
-                 true_value       = true_Z,
-                 true_value_label = 'Z_\\mathrm{true}',
-                 )
+    try:
+        Z       = np.linspace(bounds[0], bounds[1], 1000)
+        draws_Z = np.array([d.pdf(np.log(Z))/Z for d in draws])
+        plot_1d_dist(Z,
+                     draws_Z,
+                     out_folder       = out_folder,
+                     name             = 'evidence',
+                     label            = 'Z',
+                     median_label     = '\\mathrm{(H)DPGMM}',
+                     true_value       = true_Z,
+                     true_value_label = 'Z_\\mathrm{true}',
+                     )
+        bounds = np.log(bounds)
+    except:
+        bounds = draws[0].bounds[0]
     # logZ
     plot_median_cr(draws,
-                   bounds           = np.log(bounds),
+                   bounds           = bounds,
                    out_folder       = out_folder,
                    name             = 'log_evidence',
-                   label            = '\\log{Z}',
+                   label            = '\\log{\\mathcal{Z}}',
                    hierarchical     = True,
                    true_value       = logZ,
-                   true_value_label = '\\log{Z}_\\mathrm{true}'
+                   true_value_label = '\\log{\\mathcal{Z}}_\\mathrm{true}'
                    )
     Path(out_folder, 'log_log_evidence.pdf').unlink()
 
