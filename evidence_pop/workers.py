@@ -32,6 +32,7 @@ class worker_evidence:
         self.dim                  = 1
         self.bounds               = np.atleast_2d(bounds)
         self.mixture              = DPGMM(self.bounds, probit = False)
+        self.hier_sigma           = hier_sigma,
         self.hierarchical_mixture = HDPGMM(self.bounds,
                                            probit     = False,
                                            prior_pars = get_priors(self.bounds,
@@ -55,6 +56,7 @@ class worker_evidence:
         return draws
 
     def draw_hierarchical(self):
+        self.hierarchical_mixture.exp_sigma = self.hier_sigma/np.exp(np.random.uniform(np.log(1), np.log(20)))
         return self.hierarchical_mixture.density_from_samples(self.posteriors, make_comp = False)
     
     def load_posteriors(self, posteriors):
