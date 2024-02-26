@@ -36,7 +36,7 @@ def main():
     parser.add_option("-n", "--n_post_samples", type = "int", dest = "n_post_samples", help = "Number of samples to use for the inference", default = 1000)
     parser.add_option("--n_samples_dsp", type = "int", dest = "n_samples_dsp", help = "Number of samples to analyse (downsampling). Default: all", default = -1)
     parser.add_option("--sigma_prior", dest = "sigma_prior", type = "string", help = "Expected standard deviation (prior) - single value or n-dim values", default = None)
-    parser.add_option("--fraction", dest = "fraction", type = "float", help = "Fraction of samples standard deviation for sigma prior. Overrided by sigma_prior.", default = 5.)
+    parser.add_option("--fraction", dest = "fraction", type = "float", help = "Fraction of samples standard deviation for sigma prior. Overrided by sigma_prior.", default = 3.)
     parser.add_option("--no_probit", dest = "probit", action = 'store_false', help = "Disable probit transformation for posterior reconstruction", default = True)
     parser.add_option("--config", dest = "config", type = "string", help = "Config file. Warning: command line options override config options", default = None)
     parser.add_option("--n_parallel", dest = "n_parallel", type = "int", help = "Number of parallel threads", default = 1)
@@ -102,7 +102,7 @@ def main():
         draws = np.array(draws)
         save_density(draws, folder = options.output, name = 'draws_'+name, ext = 'json')
     else:
-        draws = load_density(Path(options.output, 'draws_'+name+'.json'))
+        draws = load_density(Path(options.output, 'draws_'+name+'.json'), make_comp = False)
 
     # Plot posterior distribution P(x)
     if options.save_posterior:
@@ -123,14 +123,21 @@ def main():
     # Evidence inference
     if not (options.skip_samples_z or options.postprocess):
         # Random sampling from samples within 68th percentile
+        samples = samples[np.argsort(logP)][::-1]
+        logP    = np.sort(logP)[::-1]
         idx = np.random.choice(int(len(samples)*0.68), np.min([int(len(samples)*0.68), options.n_post_samples]), replace = False)
         samples_Z = np.array([logP[idx] - d.logpdf(samples[idx]) for d in tqdm(draws, desc = 'Evaluating Zi')]).T
         np.savetxt(Path(options.output, 'samples_Z.txt'), samples_Z)
     else:
         samples_Z = np.genfromtxt(Path(options.output, 'samples_Z.txt'))
     if not options.postprocess:
-        sigma_Z   = np.std(np.median(samples_Z, axis = 1))/options.fraction
+        sigma_Z   = np.std(np.median(samples_Z, axis = 1))
         bounds_Z  = np.atleast_2d([np.min(samples_Z), np.max(samples_Z)])
+#        bounds_Z  = np.atleast_2d([*np.percentile(np.median(samples_Z, axis = 1), [1,99])])
+#        import matplotlib.pyplot as plt
+#        for f in samples_Z:
+#            plt.hist(f)
+#        plt.show()
         pool = ActorPool([worker_evidence.remote(bounds     = bounds_Z,
                                                  out_folder = options.output,
                                                  hier_sigma = sigma_Z,
