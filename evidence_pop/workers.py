@@ -56,7 +56,7 @@ class worker_evidence:
         return draws
 
     def draw_hierarchical(self):
-        self.hierarchical_mixture.exp_sigma = self.hier_sigma/np.exp(np.random.uniform(np.log(1), np.log(20)))
+        self.hierarchical_mixture.exp_sigma = self.hier_sigma/np.exp(np.random.uniform(np.log(1), np.log(10)))
         return self.hierarchical_mixture.density_from_samples(self.posteriors, make_comp = False)
     
     def load_posteriors(self, posteriors):
