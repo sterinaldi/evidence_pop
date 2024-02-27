@@ -125,19 +125,14 @@ def main():
         # Random sampling from samples within 68th percentile
         samples = samples[np.argsort(logP)][::-1]
         logP    = np.sort(logP)[::-1]
-        idx = np.random.choice(int(len(samples)*0.68), np.min([int(len(samples)*0.68), options.n_post_samples]), replace = False)
+        idx = np.random.choice(int(len(samples)*0.5), np.min([int(len(samples)*0.5), options.n_post_samples]), replace = False)
         samples_Z = np.array([logP[idx] - d.logpdf(samples[idx]) for d in tqdm(draws, desc = 'Evaluating Zi')]).T
         np.savetxt(Path(options.output, 'samples_Z.txt'), samples_Z)
     else:
         samples_Z = np.genfromtxt(Path(options.output, 'samples_Z.txt'))
     if not options.postprocess:
         sigma_Z   = np.std(np.median(samples_Z, axis = 1))
-        bounds_Z  = np.atleast_2d([np.min(samples_Z), np.max(samples_Z)])
-#        bounds_Z  = np.atleast_2d([*np.percentile(np.median(samples_Z, axis = 1), [1,99])])
-#        import matplotlib.pyplot as plt
-#        for f in samples_Z:
-#            plt.hist(f)
-#        plt.show()
+        bounds_Z  = np.atleast_2d([np.median(samples_Z) - 8*sigma_Z, np.median(samples_Z) + 8*sigma_Z])
         pool = ActorPool([worker_evidence.remote(bounds     = bounds_Z,
                                                  out_folder = options.output,
                                                  hier_sigma = sigma_Z,
