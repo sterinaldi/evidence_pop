@@ -5,6 +5,7 @@
 *.log
 *.ini
 *.dat
+*.json
 raynest/
 .DS_store
 prob_*
