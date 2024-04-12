@@ -7,7 +7,7 @@ from pathlib import Path
 from tqdm import tqdm
 from ray.util import ActorPool
 
-from figaro.utils import save_options, load_options, rvs_median
+from figaro.utils import save_options, load_options
 from figaro.plot import plot_median_cr, plot_multidim
 from figaro.load import save_density, load_density
 
@@ -33,7 +33,7 @@ def main():
     parser.add_option("--draws_p", type = "int", dest = "draws_p", help = "Number of draws for posterior reconstruction", default = 1000)
     parser.add_option("--draws_zi", type = "int", dest = "draws_zi", help = "Number of draws for individual Z_i", default = 1)
     parser.add_option("--draws", type = "int", dest = "draws", help = "Number of draws for Z", default = 1000)
-    parser.add_option("-n", "--n_post_samples", type = "int", dest = "n_post_samples", help = "Number of samples to use for the inference", default = 1000)
+    parser.add_option("-n", "--n_post_samples", type = "int", dest = "n_post_samples", help = "Number of samples to use for the inference", default = 200)
     parser.add_option("--n_samples_dsp", type = "int", dest = "n_samples_dsp", help = "Number of samples to analyse (downsampling). Default: all", default = -1)
     parser.add_option("--sigma_prior", dest = "sigma_prior", type = "string", help = "Expected standard deviation (prior) - single value or n-dim values", default = None)
     parser.add_option("--fraction", dest = "fraction", type = "float", help = "Fraction of samples standard deviation for sigma prior. Overrided by sigma_prior.", default = 3.)
@@ -123,16 +123,16 @@ def main():
     # Evidence inference
     if not (options.skip_samples_z or options.postprocess):
         # Random sampling from samples within 68th percentile
-        samples = samples[np.argsort(logP)][::-1]
-        logP    = np.sort(logP)[::-1]
-        idx = np.random.choice(int(len(samples)*0.5), np.min([int(len(samples)*0.5), options.n_post_samples]), replace = False)
+        samples   = samples[np.argsort(logP)][::-1]
+        logP      = np.sort(logP)[::-1]
+        idx       = np.random.choice(int(len(samples)*0.5), np.min([int(len(samples)*0.5), options.n_post_samples]), replace = False)
         samples_Z = np.array([logP[idx] - d.logpdf(samples[idx]) for d in tqdm(draws, desc = 'Evaluating Zi')]).T
         np.savetxt(Path(options.output, 'samples_Z.txt'), samples_Z)
     else:
         samples_Z = np.genfromtxt(Path(options.output, 'samples_Z.txt'))
     if not options.postprocess:
         sigma_Z   = np.std(np.median(samples_Z, axis = 1))
-        bounds_Z  = np.atleast_2d([np.median(samples_Z) - 8*sigma_Z, np.median(samples_Z) + 8*sigma_Z])
+        bounds_Z  = np.atleast_2d([np.median(samples_Z) - 5*sigma_Z, np.median(samples_Z) + 5*sigma_Z])
         pool = ActorPool([worker_evidence.remote(bounds     = bounds_Z,
                                                  out_folder = options.output,
                                                  hier_sigma = sigma_Z,
