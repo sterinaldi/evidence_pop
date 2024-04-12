@@ -19,7 +19,6 @@ def load_data(samples_file, logP_file, n_samples = -1):
         np.ndarray: logP
         np.ndarray: name
     '''
-
     samples, name = load_single_event(samples_file, n_samples = -1)
     logP          = np.genfromtxt(logP_file)
     samples       = samples[np.argsort(logP)][::-1]
@@ -89,7 +88,8 @@ def plot_evidence(draws, bounds = None, out_folder = '.', logZ = None):
                    true_value       = logZ,
                    true_value_label = '\\log{\\mathcal{Z}}_\\mathrm{true}'
                    )
-    Path(out_folder, 'log_log_evidence.pdf').unlink()
+    Path(out_folder, 'observed_log_evidence.pdf').rename(Path(out_folder, 'log_evidence.pdf'))
+    Path(out_folder, 'log_observed_log_evidence.pdf').unlink()
 
 def save_evidence(draws, out_folder = '.'):
     """
