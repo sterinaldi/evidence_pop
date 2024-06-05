@@ -22,7 +22,7 @@ pip install .
 * `-b "[[xmin, xmax],[ymin, ymax], ...]"`: domain bounds for $P(x)$ (remember the quotation marks);
 * `--n_parallel N`: use N parallel threads for the analysis
 * `-r`: skip the $P(x)$ reconstruction (if already done);
-* `-z`: skip the individual $p(Z(x_i))$ reconstructons (if already done);
+* `-z`: skip the individual $p(Z(x_i))$ reconstructions (if already done);
 * `-p`: postprocessing;
 * `--save_posterior`: produce a plot with the inferred $P(x)$ (it may take a long time for more than 3 dimensions). 
 
