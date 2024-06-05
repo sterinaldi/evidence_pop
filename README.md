@@ -58,7 +58,7 @@ Among these files, the most important ones are:
 
 * `log_evidence.pdf`: plot showing the posterior distribution for $Z$;
 * `evidence.txt`: stores the expected value and credible interval for $Z$;
-* `draws_evidence.json`: stores the FIGARO reconstructions for $P(Z)$ (see [here](https://figaro.readthedocs.io/en/latest/use_mixture.html) for a tutorial on how to use them).
+* `draws_evidence.json`: stores the FIGARO reconstructions for $p(Z)$ (see [here](https://figaro.readthedocs.io/en/latest/use_mixture.html) for a tutorial on how to use them).
 
 ## Acknowledgments
 If you use this code in your research, please cite [Rinaldi et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024arXiv240507504R/abstract):
