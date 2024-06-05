@@ -1,8 +1,8 @@
 # evidence_pop
 
-Parallelised non-parametric inference of evidence using posterior samples. This code implements the method described in [Rinaldi et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024arXiv240507504R/abstract). In a nutshell, the inference scheme follows these steps:
+Parallelised non-parametric inference of evidence $Z$ using posterior samples. This code implements the method described in [Rinaldi et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024arXiv240507504R/abstract). In a nutshell, the inference scheme follows these steps:
 
-1. Approximate $P(x)$ with a DPGMM;
+1. Approximate the posterior distribution $P(x)$ with a DPGMM;
 2. Evaluate $p(Z(x_i))$ for different samples $x_i$ and approximate each of these with a DPGMM;
 3. Reconstruct $p(Z)$ using (H)DPGMM.
 
