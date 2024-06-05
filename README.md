@@ -17,7 +17,7 @@ pip install .
 ```
 `evidence_pop` is meant to be used via its CLI, `evidence`. The complete list of options can be displayed with `evidence -h`: here we summarise the most important ones:
 
-* `-s path/to/samples.txt`: file storing the posterior samples;
+* `-s path/to/samples.txt`: file storing the posterior samples $x_i$;
 * `-l path/to/log_p.txt`: file storing the evaluated $\log\Pi(x_i) + \log\mathcal{L}(x_i)$ values;
 * `-b "[[xmin, xmax],[ymin, ymax], ...]"`: domain bounds for $P(x)$ (remember the quotation marks);
 * `--n_parallel N`: use N parallel threads for the analysis
@@ -34,7 +34,7 @@ folder
 ```
 the basic instruction for running the evidence inference from start to finish looks somewhat like this:
 ```
-evidence -s samples.txt -l log_p.txt -b "[[0,1],[0,1]]" --n_parallel 4
+evidence -s samples.txt -l log_p.txt -b "[[0,1],[0,1]]"
 ```
 Once the run is finished, the folder will look like this:
 ```
