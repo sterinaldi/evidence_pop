@@ -23,9 +23,42 @@ pip install .
 * `--n_parallel N`: use N parallel threads for the analysis
 * `-r`: skip the $P(x)$ reconstruction (if already done);
 * `-z`: skip the individual $p(Z(x_i))$ reconstructons (if already done);
-* `-p`: postprocessing.
+* `-p`: postprocessing;
+* `--save_posterior`: produce a plot with the inferred $P(x)$ (it may take a long time for more than 3 dimensions). 
 
-The basic instruction for running the evidence inference from start to finish looks somewhat like this
+Assuming that the folder you are working in is 
+```
+folder
+├─ samples.txt
+└─ log_p.txt
+```
+the basic instruction for running the evidence inference from start to finish looks somewhat like this:
+```
+evidence -s samples.txt -l log_p.txt -b "[[0,1],[0,1]]" --n_parallel 4
+```
+Once the run is finished, the folder will look like this:
+```
+folder
+├─ draws_evidence.json
+├─ draws_samples.json
+├─ evidence.pdf (optional)
+├─ evidence.txt
+├─ log_evidence.txt
+├─ options.ini
+├─ prob_evidence.txt (optional)
+├─ prob_log_evidence.txt
+├─ realisations_Zi.json
+├─ samples_Z.txt
+├─ samples.pdf (optional)
+├─ samples.txt
+└─ log_p.txt
+```
+
+Among these files, the most important ones are:
+
+* `log_evidence.pdf`: plot showing the posterior distribution for $Z$;
+* `evidence.txt`: stores the expected value and credible interval for $Z$;
+* `draws_evidence.json`: stores the FIGARO reconstructions for $P(Z)$ (see [here](https://figaro.readthedocs.io/en/latest/use_mixture.html) for a tutorial on how to use them).
 
 ## Acknowledgments
 If you use this code in your research, please cite [Rinaldi et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024arXiv240507504R/abstract):
