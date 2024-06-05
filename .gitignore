@@ -3,8 +3,8 @@
 *.h5
 *.png
 *.log
-*.ini
 *.dat
+*.ini
 *.json
 raynest/
 .DS_store
