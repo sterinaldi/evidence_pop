@@ -89,6 +89,7 @@ def plot_evidence(draws, bounds = None, out_folder = '.', logZ = None):
                    true_value_label = '\\log{\\mathcal{Z}}_\\mathrm{true}'
                    )
     Path(out_folder, 'observed_log_evidence.pdf').rename(Path(out_folder, 'log_evidence.pdf'))
+    Path(out_folder, 'prob_observed_log_evidence.txt').rename(Path(out_folder, 'prob_log_evidence.txt'))
     Path(out_folder, 'log_observed_log_evidence.pdf').unlink()
 
 def save_evidence(draws, out_folder = '.'):
